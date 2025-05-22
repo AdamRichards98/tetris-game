@@ -28,15 +28,40 @@ def main():
     shape_x = GRID_WIDTH // 2 - len(shape_matrix[0]) // 2
     shape_y = 0
 
+    MOVE_DELAY = 150  # milliseconds
+    last_move_time = pygame.time.get_ticks()  # Get the current time
 
     while True:
         
         screen.fill(BACKGROUND_COLOR) # Fill the screen with the background color
         
+        keys = pygame.key.get_pressed()
+        current_time = pygame.time.get_ticks()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+                
+            elif event.type == pygame.KEYDOWN:
+                if event.key in [pygame.K_UP, pygame.K_z]:
+                    # Rotate the shape
+                    shape_rotation = (shape_rotation + 1) % len(TETROMINOS[shape_key])
+                    shape_matrix = TETROMINOS[shape_key][shape_rotation]
+                    
+        if current_time - last_move_time > MOVE_DELAY:
+            if keys[pygame.K_LEFT  ]:
+                shape_x -= 1
+                last_move_time = current_time
+            elif keys[pygame.K_RIGHT ]:
+                shape_x += 1
+                last_move_time = current_time
+            elif keys[pygame.K_DOWN  ]:
+                shape_y += 1
+                last_move_time = current_time
+                    
+                
+                
 
         draw_grid(screen) # Draw the grid
         
