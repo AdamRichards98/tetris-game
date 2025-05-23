@@ -6,6 +6,17 @@ import sys
 from tetromino import TETROMINOS
 from config import *
 
+board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+
+def lock_piece(matrix, offset_x, offset_y):
+    for row_idx, row in enumerate(matrix):
+        for col_idx, cell in enumerate(row):
+            if cell:
+                x = offset_x + col_idx
+                y = offset_y + row_idx
+                if y >= 0:  # Only lock pieces that are above the bottom of the grid
+                    board[y][x] = 1
+
 def collision_check(matrix,offset_x, offset_y):
     
     for row_idx, row in enumerate(matrix):
@@ -15,7 +26,10 @@ def collision_check(matrix,offset_x, offset_y):
                 y = offset_y + row_idx
                 if x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT:
                     return True
-                
+
+                if y >= 0 and board[y][x]:
+                    return True
+
     return False
 
 # Validate BACKGROUND_COLOR
@@ -29,6 +43,7 @@ def draw_grid(screen):
 
 
 def main():
+    
     pygame.init() # Initialize Pygame
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Tetris")
@@ -48,6 +63,9 @@ def main():
     shape_x = GRID_WIDTH // 2 - len(shape_matrix[0]) // 2
     shape_y = 0
 
+
+    GRAVITY_DELAY = 800  # milliseconds
+    last_gravity_time = pygame.time.get_ticks()  # Get the current time
     MOVE_DELAY = 150  # milliseconds
     last_move_time = pygame.time.get_ticks()  # Get the current time
 
@@ -87,10 +105,38 @@ def main():
                     shape_y += 1
                     last_move_time = current_time
                     
+        if current_time - last_gravity_time > GRAVITY_DELAY:
+            if not collision_check(shape_matrix, shape_x, shape_y + 1):
+                shape_y += 1
+            else:
+                lock_piece(shape_matrix, shape_x, shape_y)
                 
+                shape_key = random.choice(list(TETROMINOS.keys()))
+                shape_rotation = 0
+                
+                shape_matrix = TETROMINOS[shape_key][shape_rotation]
+                shape_x = GRID_WIDTH // 2 - len(shape_matrix[0]) // 2
+                shape_y = 0
+                
+                if collision_check(shape_matrix, shape_x, shape_y):
+                    print("Game Over")
+                    pygame.quit()
+                    sys.exit()
+                
+            last_gravity_time = current_time        
                 
 
         draw_grid(screen) # Draw the grid
+        for y, row in enumerate(board):
+            for x, cell in enumerate(row):
+                if cell:
+                    rect = pygame.Rect(
+                        x * GRID_SIZE,
+                        y * GRID_SIZE,
+                        GRID_SIZE, GRID_SIZE
+                    )
+                    pygame.draw.rect(screen, (100, 100, 100), rect)
+        
         
         # Draw active tetromino
         for row_idx, row in enumerate(shape_matrix):
