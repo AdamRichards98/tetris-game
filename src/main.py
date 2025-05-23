@@ -7,6 +7,8 @@ from tetromino import TETROMINOS
 from config import *
 
 board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+score = 0
+font = None
 
 def lock_piece(matrix, offset_x, offset_y):
     for row_idx, row in enumerate(matrix):
@@ -16,6 +18,23 @@ def lock_piece(matrix, offset_x, offset_y):
                 y = offset_y + row_idx
                 if y >= 0:  # Only lock pieces that are above the bottom of the grid
                     board[y][x] = 1
+
+def full_line_clear():
+    global board
+    new_board = []
+    rows_cleared = 0
+    
+    for row in board:
+        if all(cell for cell in row):
+            rows_cleared += 1
+        else:
+            new_board.append(row)
+            
+    while len(new_board) < GRID_HEIGHT:
+        new_board.insert(0, [0 for _ in range(GRID_WIDTH)])
+    
+    board = new_board
+    return rows_cleared
 
 def collision_check(matrix,offset_x, offset_y):
     
@@ -44,7 +63,13 @@ def draw_grid(screen):
 
 def main():
     
+    global score, font
+    
     pygame.init() # Initialize Pygame
+    
+    pygame.font.init()
+    font = pygame.font.SysFont("Arial", 24)
+    
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Tetris")
 
@@ -109,7 +134,11 @@ def main():
             if not collision_check(shape_matrix, shape_x, shape_y + 1):
                 shape_y += 1
             else:
+                
                 lock_piece(shape_matrix, shape_x, shape_y)
+                cleared_lines = full_line_clear()
+                if cleared_lines:
+                    score += {1: 100, 2: 300, 3: 500, 4: 800}.get(cleared_lines, 1000)
                 
                 shape_key = random.choice(list(TETROMINOS.keys()))
                 shape_rotation = 0
@@ -148,6 +177,10 @@ def main():
                         GRID_SIZE, GRID_SIZE
                     )
                     pygame.draw.rect(screen, (255, 255, 255), rect)  # White block
+
+        # Render score text
+        score_text = font.render(f"Score: {score}", True, (255, 255, 255))  # White text
+        screen.blit(score_text, (10, 10))
 
         
         pygame.display.flip()
