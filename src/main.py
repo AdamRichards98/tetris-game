@@ -25,7 +25,7 @@ def full_line_clear():
     rows_cleared = 0
     
     for row in board:
-        if all(cell for cell in row):
+        if all(row):
             rows_cleared += 1
         else:
             new_board.append(row)
@@ -136,8 +136,7 @@ def main():
             else:
                 
                 lock_piece(shape_matrix, shape_x, shape_y)
-                cleared_lines = full_line_clear()
-                if cleared_lines:
+                if cleared_lines := full_line_clear():
                     score += {1: 100, 2: 300, 3: 500, 4: 800}.get(cleared_lines, 1000)
                 
                 shape_key = random.choice(list(TETROMINOS.keys()))
