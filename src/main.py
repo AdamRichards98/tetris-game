@@ -108,11 +108,11 @@ def main():
                 
             elif event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_UP, pygame.K_z]:
-                    # Rotate the shape
-                    new_rotation = shape_rotation = (shape_rotation + 1) % len(TETROMINOS[shape_key])
-                    new_matrix = TETROMINOS[shape_key][shape_rotation]
                     
-                    if not collision_check(shape_matrix, shape_x, shape_y):
+                    new_rotation = (shape_rotation + 1) % len(TETROMINOS[shape_key])
+                    new_matrix = TETROMINOS[shape_key][new_rotation]
+
+                    if not collision_check(new_matrix, shape_x, shape_y):
                         shape_rotation = new_rotation
                         shape_matrix = new_matrix
                     
