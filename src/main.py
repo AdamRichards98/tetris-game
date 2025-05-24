@@ -63,7 +63,6 @@ def main():
             
             
             lock_piece(shape_matrix, shape_x, shape_y, shape_key)
-            cleared_lines = full_line_clear()
 
 
             if cleared_lines := full_line_clear():
