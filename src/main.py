@@ -39,35 +39,41 @@ def main():
         current_time = pygame.time.get_ticks()
 
         for event in pygame.event.get():
-            
+
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            
+
             elif event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_UP, pygame.K_z]:
                     shape_rotation, shape_matrix = handle_rotation(
                         shape_key, shape_rotation, shape_matrix, shape_x, shape_y
                     )
 
-        shape_x, shape_y, last_move_time = handle_movement(
+        shape_x, _, last_move_time = handle_movement(
             keys, shape_matrix, shape_x, shape_y, last_move_time, current_time, MOVE_DELAY
         )
 
-        shape_y, last_gravity_time, locked = handle_gravity(
-            shape_matrix, shape_x, shape_y, last_gravity_time, current_time, GRAVITY_DELAY
+        shape_y, last_gravity_time, locked = apply_fall_or_lock(
+            shape_matrix, shape_x, shape_y, current_time, last_gravity_time, GRAVITY_DELAY, keys
         )
+
 
         if locked:
             
+            
             lock_piece(shape_matrix, shape_x, shape_y, shape_key)
+            cleared_lines = full_line_clear()
+
+
             if cleared_lines := full_line_clear():
                 score += {1: 100, 2: 300, 3: 500, 4: 800}.get(cleared_lines, 1000)
-            
-            current_tetromino = next_tetromino
+
+
+            shape_key, shape_rotation, shape_matrix, shape_x, shape_y = next_tetromino
             next_tetromino = spawn_new_tetromino()
-            shape_key, shape_rotation, shape_matrix, shape_x, shape_y = current_tetromino
-            
+
+
             if collision_check(shape_matrix, shape_x, shape_y):
                 print("Game Over")
                 pygame.quit()
@@ -76,10 +82,10 @@ def main():
         draw_grid(screen)
         draw_board(screen)
         active_tetromino(screen, shape_matrix, shape_x, shape_y, shape_key)
-        
+
         sidebar_rect = pygame.Rect(SCREEN_WIDTH, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT)
         pygame.draw.rect(screen, (30, 30, 30), sidebar_rect)
-        
+
         draw_score(screen, font, score)
         draw_next_tetromino(screen, font, next_tetromino)
 

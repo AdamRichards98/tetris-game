@@ -6,22 +6,18 @@ import random
 import itertools
 import pygame
 
-def full_line_clear():
-    global board
-    new_board = []
-    rows_cleared = 0
-    
-    for row in board:
-        if all(row):
-            rows_cleared += 1
+def apply_fall_or_lock(shape_matrix, shape_x, shape_y, current_time, last_gravity_time, gravity_delay, keys):
+    should_fall = current_time - last_gravity_time > gravity_delay or keys[pygame.K_DOWN]
+    locked = False
+
+    if should_fall:
+        if not collision_check(shape_matrix, shape_x, shape_y + 1):
+            shape_y += 1
         else:
-            new_board.append(row)
-            
-    while len(new_board) < GRID_HEIGHT:
-        new_board.insert(0, [0 for _ in range(GRID_WIDTH)])
-    
-    board = new_board
-    return rows_cleared
+            locked = True
+        last_gravity_time = current_time
+
+    return shape_y, last_gravity_time, locked
 
 def collision_check(matrix,offset_x, offset_y):
     
@@ -66,25 +62,9 @@ def handle_movement(keys, shape_matrix, shape_x, shape_y, last_move_time, curren
             if not collision_check(shape_matrix, shape_x + 1, shape_y):
                 shape_x += 1
                 moved = True
-        elif keys[pygame.K_DOWN]:
-            if not collision_check(shape_matrix, shape_x, shape_y + 1):
-                shape_y += 1
-                moved = True
     if moved:
         last_move_time = current_time
     return shape_x, shape_y, last_move_time
-
-def handle_gravity(shape_matrix, shape_x, shape_y, last_gravity_time, current_time, GRAVITY_DELAY):
-    if current_time - last_gravity_time > GRAVITY_DELAY:
-        if not collision_check(shape_matrix, shape_x, shape_y + 1):
-            shape_y += 1
-            locked = False
-        else:
-            locked = True
-        last_gravity_time = current_time
-    else:
-        locked = False
-    return shape_y, last_gravity_time, locked
 
 def draw_next_tetromino(screen, font, next_tetromino):
     next_shape_key, next_shape_rotation, next_shape_matrix, _, _ = next_tetromino
