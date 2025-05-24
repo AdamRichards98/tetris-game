@@ -4,9 +4,20 @@ GRID_WIDTH = 10
 GRID_HEIGHT = 20
 GRID_SIZE = 30
 
+SIDEBAR_WIDTH = 6 * GRID_SIZE
+
 SCREEN_WIDTH = GRID_WIDTH * GRID_SIZE
 SCREEN_HEIGHT = GRID_HEIGHT * GRID_SIZE
 
 BACKGROUND_COLOR = (0, 0, 0)
 GRID_COLOR = (255, 255, 255)
 
+TETROMINO_COLORS = {
+    'I': (0, 255, 255),
+    'J': (0, 0, 255),
+    'L': (255, 165, 0),
+    'O': (255, 255, 0),
+    'S': (0, 255, 0),
+    'T': (128, 0, 128),
+    'Z': (255, 0, 0)
+}
