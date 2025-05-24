@@ -6,15 +6,6 @@ import random
 import itertools
 import pygame
 
-def lock_piece(matrix, offset_x, offset_y):
-    for row_idx, row in enumerate(matrix):
-        for col_idx, cell in enumerate(row):
-            if cell:
-                x = offset_x + col_idx
-                y = offset_y + row_idx
-                if y >= 0:  # Only lock pieces that are above the bottom of the grid
-                    board[y][x] = 1
-
 def full_line_clear():
     global board
     new_board = []
@@ -95,24 +86,14 @@ def handle_gravity(shape_matrix, shape_x, shape_y, last_gravity_time, current_ti
         locked = False
     return shape_y, last_gravity_time, locked
 
-def draw_board(screen):
-    for y, row in enumerate(board):
-        for x, cell in enumerate(row):
-            if cell:
-                rect = pygame.Rect(
-                    x * GRID_SIZE,
-                    y * GRID_SIZE,
-                    GRID_SIZE, GRID_SIZE
-                )
-                pygame.draw.rect(screen, (100, 100, 100), rect)
-
 def draw_next_tetromino(screen, font, next_tetromino):
     next_shape_key, next_shape_rotation, next_shape_matrix, _, _ = next_tetromino
     preview_x = SCREEN_WIDTH + 20
     preview_y = 120
+    
     label = font.render("Next:", True, (255, 255, 255))
     screen.blit(label, (preview_x, preview_y - 30))
-    
+    piece_color = TETROMINO_COLORS.get(next_shape_key, (200, 200, 200))
     
     for row_idx, row in enumerate(next_shape_matrix):
         for col_idx, cell in enumerate(row):
@@ -122,9 +103,11 @@ def draw_next_tetromino(screen, font, next_tetromino):
                     preview_y + row_idx * GRID_SIZE,
                     GRID_SIZE, GRID_SIZE
                 )
-                pygame.draw.rect(screen, (200, 200, 200), rect)
+                pygame.draw.rect(screen, piece_color, rect)
 
-def active_tetromino(screen, shape_matrix, shape_x, shape_y):
+def active_tetromino(screen, shape_matrix, shape_x, shape_y, shape_key):
+    piece_color = TETROMINO_COLORS.get(shape_key, (255, 255, 255))
+    
     for row_idx, row in enumerate(shape_matrix):
         for col_idx, cell in enumerate(row):
             if cell:
@@ -133,7 +116,7 @@ def active_tetromino(screen, shape_matrix, shape_x, shape_y):
                     (shape_y + row_idx) * GRID_SIZE,
                     GRID_SIZE, GRID_SIZE
                 )
-                pygame.draw.rect(screen, (255, 255, 255), rect)
+                pygame.draw.rect(screen, piece_color, rect)
 
 def draw_score(screen, font, score):
     score_text = font.render(f"Score: {score}", True, (255, 255, 255))

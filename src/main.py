@@ -3,18 +3,13 @@ import random
 import pygame
 import sys
 
-from board import board
+from board import *
 from tetromino import TETROMINOS
 from config import *
 from game import *
 
-
-
 score = 0
 font = None
-
-
-
 def main():
     global score, font
 
@@ -65,7 +60,7 @@ def main():
 
         if locked:
             
-            lock_piece(shape_matrix, shape_x, shape_y)
+            lock_piece(shape_matrix, shape_x, shape_y, shape_key)
             if cleared_lines := full_line_clear():
                 score += {1: 100, 2: 300, 3: 500, 4: 800}.get(cleared_lines, 1000)
             
@@ -80,7 +75,7 @@ def main():
 
         draw_grid(screen)
         draw_board(screen)
-        active_tetromino(screen, shape_matrix, shape_x, shape_y)
+        active_tetromino(screen, shape_matrix, shape_x, shape_y, shape_key)
         
         sidebar_rect = pygame.Rect(SCREEN_WIDTH, 0, SIDEBAR_WIDTH, SCREEN_HEIGHT)
         pygame.draw.rect(screen, (30, 30, 30), sidebar_rect)
