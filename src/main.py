@@ -1,3 +1,5 @@
+#src/main.py
+
 import itertools
 import random
 import pygame
@@ -110,17 +112,17 @@ def draw_board(screen):
                 )
                 pygame.draw.rect(screen, (100, 100, 100), rect)
 
-def draw_next_tetromino(screen, font, next_tetromino):
-    next_shape_key, next_shape_rotation, next_shape_matrix, _, _ = next_tetromino
-    preview_x = SCREEN_WIDTH - 6 * GRID_SIZE
-    preview_y = 2 * GRID_SIZE
+def draw_next_tetromino(screen, font, next_shape_matrix):
+    sidebar_x = SCREEN_WIDTH + 20
+    preview_y = 120
     label = font.render("Next:", True, (255, 255, 255))
-    screen.blit(label, (preview_x, preview_y - 30))
+    screen.blit(label, (sidebar_x, preview_y - 30))
+
     for row_idx, row in enumerate(next_shape_matrix):
         for col_idx, cell in enumerate(row):
             if cell:
                 rect = pygame.Rect(
-                    preview_x + col_idx * GRID_SIZE,
+                    sidebar_x + col_idx * GRID_SIZE,
                     preview_y + row_idx * GRID_SIZE,
                     GRID_SIZE, GRID_SIZE
                 )
@@ -138,8 +140,9 @@ def active_tetromino(screen, shape_matrix, shape_x, shape_y):
                 pygame.draw.rect(screen, (255, 255, 255), rect)
 
 def draw_score(screen, font, score):
-    score_text = font.render(f"Score: {score}", True, (255, 255, 255))
-    screen.blit(score_text, (10, 10))
+    sidebar_x = SCREEN_WIDTH + 20
+    screen.blit(font.render("Score:", True, (255, 255, 255)), (sidebar_x, 30))
+    screen.blit(font.render(str(score), True, (255, 255, 255)), (sidebar_x, 60))
 
 def spawn_new_tetromino():
     shape_key = random.choice(list(TETROMINOS.keys()))
@@ -155,7 +158,7 @@ def main():
     pygame.init()
     pygame.font.init()
     font = pygame.font.SysFont("Arial", 24)
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((SCREEN_WIDTH + SIDEBAR_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Tetris")
     clock = pygame.time.Clock()
 
@@ -205,6 +208,10 @@ def main():
             
             current_tetromino = next_tetromino
             next_tetromino = spawn_new_tetromino()
+            
+            draw_score(screen, font, score)
+            draw_next_tetromino(screen, font, next_tetromino[2])
+            
             shape_key, shape_rotation, shape_matrix, shape_x, shape_y = current_tetromino
             
             if collision_check(shape_matrix, shape_x, shape_y):
@@ -216,7 +223,7 @@ def main():
         draw_board(screen)
         active_tetromino(screen, shape_matrix, shape_x, shape_y)
         draw_score(screen, font, score)
-        draw_next_tetromino(screen, font, next_tetromino)
+        draw_next_tetromino(screen, font, next_tetromino[2])
 
         pygame.display.flip()
         clock.tick(60)
