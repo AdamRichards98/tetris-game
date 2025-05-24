@@ -3,12 +3,25 @@ import random
 import pygame
 import sys
 
-from tetromino import TETROMINOS
+try:
+    from tetromino import TETROMINOS
+    if not isinstance(TETROMINOS, dict) or not TETROMINOS:
+        raise ValueError("TETROMINOS must be a non-empty dictionary of tetromino shapes.")
+except ImportError as e:
+    raise ImportError("Failed to import TETROMINOS from 'tetromino'. Ensure the module exists and is correctly defined.") from e
 from config import *
 
+# Fallback for BACKGROUND_COLOR if not defined or improperly imported
+try:
+    BACKGROUND_COLOR
+except NameError:
+    BACKGROUND_COLOR = (0, 0, 0)  # Default to black
+
 board = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-score = 0
-font = None
+class Game:
+    def __init__(self):
+        self.score = 0
+        self.font = None
 
 def lock_piece(matrix, offset_x, offset_y):
     for row_idx, row in enumerate(matrix):
@@ -137,7 +150,9 @@ def active_tetromino(screen, shape_matrix, shape_x, shape_y):
                 )
                 pygame.draw.rect(screen, (255, 255, 255), rect)
 
-def draw_score(screen, font, score):
+def draw_score(screen, game):
+    font = game.font
+    score = game.score
     score_text = font.render(f"Score: {score}", True, (255, 255, 255))
     screen.blit(score_text, (10, 10))
 
@@ -149,12 +164,56 @@ def spawn_new_tetromino():
     shape_y = 0
     return shape_key, shape_rotation, shape_matrix, shape_x, shape_y
 
-def main():
-    global score, font
+def handle_events(shape_key, shape_rotation, shape_matrix, shape_x, shape_y):
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key in [pygame.K_UP, pygame.K_z]:
+                shape_rotation, shape_matrix = handle_rotation(
+                    shape_key, shape_rotation, shape_matrix, shape_x, shape_y
+                )
 
+
+def handle_movement_logic(keys, shape_matrix, shape_x, shape_y, last_move_time, current_time, MOVE_DELAY):
+    return handle_movement(keys, shape_matrix, shape_x, shape_y, last_move_time, current_time, MOVE_DELAY)
+
+
+def handle_gravity_logic(shape_matrix, shape_x, shape_y, last_gravity_time, current_time, GRAVITY_DELAY):
+    return handle_gravity(shape_matrix, shape_x, shape_y, last_gravity_time, current_time, GRAVITY_DELAY)
+
+
+def handle_locking_and_clearing(shape_matrix, shape_x, shape_y, game, current_tetromino, next_tetromino):
+    lock_piece(shape_matrix, shape_x, shape_y)
+    cleared_lines = full_line_clear()
+    if cleared_lines:
+        game.score += {1: 100, 2: 300, 3: 500, 4: 800}.get(cleared_lines, 1000)
+
+    current_tetromino = next_tetromino
+    next_tetromino = spawn_new_tetromino()
+    shape_key, shape_rotation, shape_matrix, shape_x, shape_y = current_tetromino
+
+    if collision_check(shape_matrix, shape_x, shape_y):
+        print("Game Over")
+        pygame.quit()
+        sys.exit()
+
+    return current_tetromino, next_tetromino
+
+def redraw_screen(screen, shape_matrix, shape_x, shape_y, game, next_tetromino):
+    draw_grid(screen)
+    draw_board(screen)
+    active_tetromino(screen, shape_matrix, shape_x, shape_y)
+    draw_score(screen, game)
+    draw_next_tetromino(screen, game.font, next_tetromino)
+
+
+def main():
     pygame.init()
     pygame.font.init()
-    font = pygame.font.SysFont("Arial", 24)
+    game = Game()
+    game.font = pygame.font.SysFont("Arial", 24)
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Tetris")
     clock = pygame.time.Clock()
@@ -172,52 +231,35 @@ def main():
     MOVE_DELAY = 150
     last_move_time = pygame.time.get_ticks()
 
+    redraw_needed = True  # Flag to track if redraw is needed
+
     while True:
-        screen.fill(BACKGROUND_COLOR)
+        if redraw_needed:
+            screen.fill(BACKGROUND_COLOR)
+
         keys = pygame.key.get_pressed()
         current_time = pygame.time.get_ticks()
 
-        for event in pygame.event.get():
-            
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            
-            elif event.type == pygame.KEYDOWN:
-                if event.key in [pygame.K_UP, pygame.K_z]:
-                    shape_rotation, shape_matrix = handle_rotation(
-                        shape_key, shape_rotation, shape_matrix, shape_x, shape_y
-                    )
-
-        shape_x, shape_y, last_move_time = handle_movement(
+        handle_events(shape_key, shape_rotation, shape_matrix, shape_x, shape_y)
+        shape_x, shape_y, last_move_time = handle_movement_logic(
             keys, shape_matrix, shape_x, shape_y, last_move_time, current_time, MOVE_DELAY
         )
-
-        shape_y, last_gravity_time, locked = handle_gravity(
+        shape_y, last_gravity_time, locked = handle_gravity_logic(
             shape_matrix, shape_x, shape_y, last_gravity_time, current_time, GRAVITY_DELAY
         )
 
         if locked:
-            
-            lock_piece(shape_matrix, shape_x, shape_y)
-            if cleared_lines := full_line_clear():
-                score += {1: 100, 2: 300, 3: 500, 4: 800}.get(cleared_lines, 1000)
-            
-            current_tetromino = next_tetromino
-            next_tetromino = spawn_new_tetromino()
-            shape_key, shape_rotation, shape_matrix, shape_x, shape_y = current_tetromino
-            
-            if collision_check(shape_matrix, shape_x, shape_y):
-                print("Game Over")
-                pygame.quit()
-                sys.exit()
+            current_tetromino, next_tetromino, shape_key, shape_rotation, shape_matrix, shape_x, shape_y = handle_locking_and_clearing(
+                shape_matrix, shape_x, shape_y, game, current_tetromino, next_tetromino
+            )
 
-        draw_grid(screen)
-        draw_board(screen)
-        active_tetromino(screen, shape_matrix, shape_x, shape_y)
-        draw_score(screen, font, score)
-        draw_next_tetromino(screen, font, next_tetromino)
+        if redraw_needed:
+            redraw_screen(
+                screen, shape_matrix, shape_x, shape_y, game, next_tetromino
+            )
+            redraw_needed = False
 
+        clock.tick(FRAME_RATE)
         pygame.display.flip()
         clock.tick(60)
         
